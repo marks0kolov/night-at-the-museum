@@ -1,0 +1,4 @@
+- add the option to install via curl script instead of building from source
+- add a shadown on hover for all buttons
+- make it dynamically take screen size
+- 

@@ -1,0 +1,1 @@
+- add the option to install via cUrl script instead of building from source

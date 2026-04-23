@@ -1,12 +1,11 @@
 import pygame as pg
-from config import WIDTH, HEIGHT, IMAGES_PATH, FONTS_PATH
+from config import WIDTH, HEIGHT, IMAGES_PATH, FONTS_PATH, MUSIC_PATH
 
 # ============ COLORS ============
 WHITE = (255, 255, 255)
 BROWN = (42, 29, 18)
 
-# ============ IMAGES ============
-# ~~~~~~ HELPERS ~~~~~~
+# ============ HELPERS ============
 
 def _load_image(path, size=None):
     try:
@@ -18,6 +17,16 @@ def _load_image(path, size=None):
     if size:
         img = pg.transform.scale(img, size)
     return img
+
+def _load_audio(path):
+    try:
+        audio = pg.mixer.Sound(path)
+    except Exception:
+        print(f"Error: audio not found at path {path}")
+        exit()
+    return audio
+
+# ============ IMAGES ============
 # ~~~~~~ SIZES ~~~~~~
 START_BUTTON_SIZE = (450, 150)
 SETTINGS_BUTTON_SIZE = START_BUTTON_SIZE[1]
@@ -72,7 +81,16 @@ player_images = dict(
     )
 )
 
+# ============ AUDIO ============
+
+try:
+    music = pg.mixer.music.load(MUSIC_PATH / "background.mp3")
+except Exception:
+    print(f"Error: music not found at path {MUSIC_PATH / "background.mp3"}")
+    exit()
+
 # ============ FONTS ============
+
 TITLE = pg.font.Font(FONTS_PATH / "UnifrakturMaguntia.ttf", 118)
 HEADING = pg.font.Font(FONTS_PATH / "UnifrakturMaguntia.ttf", 72)
 

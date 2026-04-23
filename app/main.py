@@ -5,6 +5,7 @@ from config import *
 
 # ============ INIT ============
 pg.init()
+pg.mixer.init()
 
 # ============ LOGIC ============
 # ~~~~~~ PLAYER ~~~~~~
@@ -18,13 +19,13 @@ class Player:
 
 player = Player()
 
-# ~~~~~~ CONFIGURABLE VALUES ~~~~~~
+# ~~~~~~ CONFIGURABLE VALUES IN SETTINGS ~~~~~~ # todo: create json
 selected_difficuly = "medium"
 settings_name = ""
 sound_fx_enabled = True
 music_enabled = True
 
-# ~~~~~~ SIZES ~~~~~~
+# ~~~~~~ SIZES ~~~~~~ # todo: move this somewhere else
 DIFFICULY_BUTTONS = {
     "easy": difficuly_easy_button,
     "medium": difficuly_medium_button,
@@ -49,7 +50,7 @@ class SettingsCursor:
 
 settings_cursor = SettingsCursor()
 
-# ============ FUNCTIONS ============
+# ============ FUNCTIONS ============ # todo: split into multiple files
 
 # -------- HELPERS --------
 def _button_pressed(event: pg.event.Event, button_rect: pg.Rect):
@@ -64,6 +65,56 @@ def _set_state(new_state: str):
     global state
     state = new_state
 
+# -------- STARTING SCREEEN --------
+# ~~~~~~ LAYOUT ~~~~~~
+def _get_starting_screen_layout():
+    """create rects for the start screen"""
+    # start and settings buttons
+    settings_button_size = start_button.get_height()
+    total_width = start_button.get_width() + settings_button_size + PADDING_SMALL
+    start_x = WIDTH // 2 - total_width // 2
+    settings_x = start_x + start_button.get_width() + PADDING_SMALL
+    start_rect = start_button.get_rect(topleft=(start_x, START_BUTTONS_Y))
+    settings_rect = pg.Rect(settings_x, START_BUTTONS_Y, settings_button_size, settings_button_size)
+
+    # title render and rect
+    title_text = TITLE.render("Night at The Museum", True, WHITE)
+    title_rect = title_text.get_rect(midtop=(WIDTH // 2, START_TITLE_Y))
+
+    # start text render and rect
+    start_text = SUBTITLE.render("START", True, BROWN)
+    start_text_rect = start_text.get_rect(center=start_rect.center)
+
+    # settings icon rect
+    settings_icon_size = int(settings_rect.width * 0.7)
+    settings_icon = pg.transform.scale(icon_settings, (settings_icon_size, settings_icon_size))
+    settings_icon_rect = settings_icon.get_rect(center=settings_rect.center)
+    
+    return {
+        "start_button_rect": start_rect,
+        "settings_button_rect": settings_rect,
+        "title_text": title_text,
+        "start_text": start_text,
+        "settings_icon": settings_icon,
+        "settings_icon_rect": settings_icon_rect,
+        "title_rect": title_rect,
+        "start_text_rect": start_text_rect,
+    }
+
+# ~~~~~~ RENDERING ~~~~~~
+def render_starting_screen():
+    screen.blit(background, (0, 0))
+
+    layout = _get_starting_screen_layout()
+
+    screen.blit(layout["title_text"], layout["title_rect"])
+    screen.blit(start_button, layout["start_button_rect"])
+    screen.blit(pg.transform.scale(generic_button, layout["settings_button_rect"].size), layout["settings_button_rect"])
+    screen.blit(layout["start_text"], layout["start_text_rect"])
+    screen.blit(layout["settings_icon"], layout["settings_icon_rect"])
+
+# -------- GAME --------
+# ~~~~~~ LAYOUT ~~~~~~
 def _get_grid_layout():
     """calculate the current grid size and room size from the selected difficuly"""
     grid_w, grid_h = GRID_SIZES[selected_difficuly]
@@ -76,12 +127,39 @@ def _get_grid_layout():
         "room_size": room_size,
     }
 
-def _get_scaled_player_image(room_size: int):
-    """scale the current player sprite so it still fits inside a room"""
-    sprite_size = max(1, room_size - PADDING_BIG)
-    return pg.transform.scale(player.image, (sprite_size, sprite_size))
+# ~~~~~~ RENDERING ~~~~~~
+def _render_grid():
+    """"render game grid of rooms"""
+    grid_layout = _get_grid_layout()
+    room_surface = pg.transform.scale(room, (grid_layout["room_size"], grid_layout["room_size"]))
+    for i in range(grid_layout["grid_w"]):
+        for j in range(grid_layout["grid_h"]):
+            x = GRID_OFFSET_X + PADDING_SMALL + i * (grid_layout["room_size"] + PADDING_SMALL)
+            y = GRID_OFFSET_Y + PADDING_SMALL + j * (grid_layout["room_size"] + PADDING_SMALL)
+            screen.blit(room_surface, (x, y))
 
-# -------- LAYOUT --------
+def _render_player():
+    """render player based on current position and rotation"""
+    grid_layout = _get_grid_layout()
+    sprite_size = max(1, grid_layout["room_size"] - PADDING_BIG)
+    image = pg.transform.scale(player.image, (sprite_size, sprite_size))
+    rotated_image = pg.transform.rotate(image, player.rotation)
+    clamped_x = min(player.pos_x, grid_layout["grid_w"] - 1)
+    clamped_y = min(player.pos_y, grid_layout["grid_h"] - 1)
+    x = GRID_OFFSET_X + PADDING_SMALL + clamped_x * (grid_layout["room_size"] + PADDING_SMALL)
+    y = GRID_OFFSET_Y + PADDING_SMALL + clamped_y * (grid_layout["room_size"] + PADDING_SMALL)
+    player_rect = rotated_image.get_rect(center=(x + grid_layout["room_size"] // 2, y + grid_layout["room_size"] // 2))
+    screen.blit(rotated_image, player_rect)
+
+def render_game():
+    """collect all rendering helpers into one render func for the entire game screen"""
+    screen.blit(background, (0, 0))
+
+    _render_grid()
+    _render_player()
+
+# -------- SETTINGS MENU --------
+# ~~~~~~ LAYOUT ~~~~~~
 def _get_settings_layout():
     """calculate and return all the rectangles and rendered text needed to draw the settings screen"""
     #! some ai was used when writing this function, however, all the comments were written by me and i reviewed every single line. 
@@ -204,104 +282,7 @@ def _get_settings_layout():
     }
     # phew
 
-def _get_start_screen_layout():
-    """create rects for the start screen"""
-    # start and settings buttons
-    settings_button_size = start_button.get_height()
-    total_width = start_button.get_width() + settings_button_size + PADDING_SMALL
-    start_x = WIDTH // 2 - total_width // 2
-    settings_x = start_x + start_button.get_width() + PADDING_SMALL
-    start_rect = start_button.get_rect(topleft=(start_x, START_BUTTONS_Y))
-    settings_rect = pg.Rect(settings_x, START_BUTTONS_Y, settings_button_size, settings_button_size)
-
-    # title render and rect
-    title_text = TITLE.render("Night at The Museum", True, WHITE)
-    title_rect = title_text.get_rect(midtop=(WIDTH // 2, START_TITLE_Y))
-
-    # start text render and rect
-    start_text = SUBTITLE.render("START", True, BROWN)
-    start_text_rect = start_text.get_rect(center=start_rect.center)
-
-    # settings icon rect
-    settings_icon_size = int(settings_rect.width * 0.7)
-    settings_icon = pg.transform.scale(icon_settings, (settings_icon_size, settings_icon_size))
-    settings_icon_rect = settings_icon.get_rect(center=settings_rect.center)
-    
-    return {
-        "start_button_rect": start_rect,
-        "settings_button_rect": settings_rect,
-        "title_text": title_text,
-        "start_text": start_text,
-        "settings_icon": settings_icon,
-        "settings_icon_rect": settings_icon_rect,
-        "title_rect": title_rect,
-        "start_text_rect": start_text_rect,
-    }
-
-# -------- SETTINGS NAME INPUT FIELD --------
-def _handle_settings_name_keydown(event: pg.event.Event, field_rect: pg.Rect):
-    """handle a key being pressed if the name is currently being typed in"""
-    global settings_name
-
-    if event.key == pg.K_BACKSPACE:
-        if settings_cursor.col > 0:
-            settings_name = settings_name[:settings_cursor.col - 1] + settings_name[settings_cursor.col:]
-            settings_cursor.col -= 1
-    elif event.key == pg.K_RIGHT:
-        if settings_cursor.col < len(settings_name):
-            settings_cursor.col += 1
-    elif event.key == pg.K_LEFT:
-        if settings_cursor.col > 0:
-            settings_cursor.col -= 1
-    elif event.unicode:
-        settings_name = settings_name[:settings_cursor.col] + event.unicode + settings_name[settings_cursor.col:]
-        settings_cursor.col += 1
-    elif event.key == pg.K_RETURN:
-        pass
-
-    settings_cursor.update_scroll(field_rect)
-
-def _render_settings_text_field(field_rect: pg.Rect):
-    """render the text field and cursor for the name input in settings"""
-    screen.blit(pg.transform.scale(name_input_field, field_rect.size), field_rect)
-
-    rendered_text = BODY.render(settings_name, True, BROWN)
-
-    clip_rect = screen.get_clip()
-    screen.set_clip(field_rect.inflate(-PADDING_SMALL, 0))
-
-    text_x = field_rect.x + PADDING_SMALL - settings_cursor.scroll_px
-    screen.blit(rendered_text, (text_x, field_rect.y + (field_rect.height - rendered_text.get_height()) // 2))
-
-    if (pg.time.get_ticks() // 500) % 2 == 0:
-        cursor_x = field_rect.x + PADDING_SMALL + BODY.size(settings_name[:settings_cursor.col])[0] - settings_cursor.scroll_px
-        cursor_h = BODY.get_height()
-        cursor_y = field_rect.y + (field_rect.height - cursor_h) // 2
-        pg.draw.rect(screen, BROWN, (cursor_x, cursor_y, 3, cursor_h), border_radius=2)
-
-    screen.set_clip(clip_rect)
-
-# -------- RENDER --------
-def _render_grid():
-    """"render game grid of rooms"""
-    grid_layout = _get_grid_layout()
-    room_surface = pg.transform.scale(room, (grid_layout["room_size"], grid_layout["room_size"]))
-    for i in range(grid_layout["grid_w"]):
-        for j in range(grid_layout["grid_h"]):
-            x = GRID_OFFSET_X + PADDING_SMALL + i * (grid_layout["room_size"] + PADDING_SMALL)
-            y = GRID_OFFSET_Y + PADDING_SMALL + j * (grid_layout["room_size"] + PADDING_SMALL)
-            screen.blit(room_surface, (x, y))
-
-def _render_player():
-    grid_layout = _get_grid_layout()
-    rotated_image = pg.transform.rotate(_get_scaled_player_image(grid_layout["room_size"]), player.rotation)
-    clamped_x = min(player.pos_x, grid_layout["grid_w"] - 1)
-    clamped_y = min(player.pos_y, grid_layout["grid_h"] - 1)
-    x = GRID_OFFSET_X + PADDING_SMALL + clamped_x * (grid_layout["room_size"] + PADDING_SMALL)
-    y = GRID_OFFSET_Y + PADDING_SMALL + clamped_y * (grid_layout["room_size"] + PADDING_SMALL)
-    player_rect = rotated_image.get_rect(center=(x + grid_layout["room_size"] // 2, y + grid_layout["room_size"] // 2))
-    screen.blit(rotated_image, player_rect)
-
+# ~~~~~~ RENDERING ~~~~~~
 def _render_audio_button(rect: pg.Rect, icon: pg.Surface, enabled: bool):
     """render button for toggling sound or music in settings"""
     screen.blit(pg.transform.scale(generic_button, rect.size), rect)
@@ -317,18 +298,8 @@ def _render_audio_button(rect: pg.Rect, icon: pg.Surface, enabled: bool):
         off_rect = off_surface.get_rect(center=rect.center)
         screen.blit(off_surface, off_rect)
 
-def render_starting_screen():
-    screen.blit(background, (0, 0))
-
-    layout = _get_start_screen_layout()
-
-    screen.blit(layout["title_text"], layout["title_rect"])
-    screen.blit(start_button, layout["start_button_rect"])
-    screen.blit(pg.transform.scale(generic_button, layout["settings_button_rect"].size), layout["settings_button_rect"])
-    screen.blit(layout["start_text"], layout["start_text_rect"])
-    screen.blit(layout["settings_icon"], layout["settings_icon_rect"])
-
 def render_settings_window():
+    """get the layout from _get_settings_layout and render the settings menu using it"""
     layout = _get_settings_layout()
 
     screen.blit(settings_window, layout["window_rect"])
@@ -351,15 +322,58 @@ def render_settings_window():
     _render_audio_button(layout["buttons"]["sound"], icon_sfx, sound_fx_enabled)
     _render_audio_button(layout["buttons"]["music"], icon_music, music_enabled)
 
+# ~~~~~~ TEXT INPUT ~~~~~~
+def _render_settings_text_field(field_rect: pg.Rect):
+    """render the text field and cursor for the name input in settings"""
+    screen.blit(pg.transform.scale(name_input_field, field_rect.size), field_rect)
+
+    rendered_text = BODY.render(settings_name, True, BROWN)
+
+    clip_rect = screen.get_clip()
+    screen.set_clip(field_rect.inflate(-PADDING_SMALL, 0))
+
+    text_x = field_rect.x + PADDING_SMALL - settings_cursor.scroll_px
+    screen.blit(rendered_text, (text_x, field_rect.y + (field_rect.height - rendered_text.get_height()) // 2))
+
+    if (pg.time.get_ticks() // 500) % 2 == 0:
+        cursor_x = field_rect.x + PADDING_SMALL + BODY.size(settings_name[:settings_cursor.col])[0] - settings_cursor.scroll_px
+        cursor_h = BODY.get_height()
+        cursor_y = field_rect.y + (field_rect.height - cursor_h) // 2
+        pg.draw.rect(screen, BROWN, (cursor_x, cursor_y, 3, cursor_h), border_radius=2)
+
+    screen.set_clip(clip_rect)
+
+def _handle_settings_name_keydown(event: pg.event.Event, field_rect: pg.Rect):
+    """handle a key being pressed if the name is currently being typed in"""
+    global settings_name
+
+    if event.key == pg.K_BACKSPACE:
+        if settings_cursor.col > 0:
+            settings_name = settings_name[:settings_cursor.col - 1] + settings_name[settings_cursor.col:]
+            settings_cursor.col -= 1
+    elif event.key == pg.K_RIGHT:
+        if settings_cursor.col < len(settings_name):
+            settings_cursor.col += 1
+    elif event.key == pg.K_LEFT:
+        if settings_cursor.col > 0:
+            settings_cursor.col -= 1
+    elif event.unicode:
+        settings_name = settings_name[:settings_cursor.col] + event.unicode + settings_name[settings_cursor.col:]
+        settings_cursor.col += 1
+    elif event.key == pg.K_RETURN:
+        pass
+
+    settings_cursor.update_scroll(field_rect)
+
 # -------- GAME LOOP --------
-def check_events():
+def handle_events():
     global state, selected_difficuly, sound_fx_enabled, music_enabled
     for event in pg.event.get():
         if event.type == pg.QUIT:
             return False
 
         if state == "starting_screen":
-            settings_layout = _get_start_screen_layout()
+            settings_layout = _get_starting_screen_layout()
 
             if _button_pressed(event, settings_layout["start_button_rect"]):
                 _set_state("game")
@@ -381,6 +395,10 @@ def check_events():
                 sound_fx_enabled = not sound_fx_enabled
 
             if _button_pressed(event, layout["buttons"]["music"]):
+                if music_enabled:
+                    pg.mixer.music.pause()
+                else:
+                    pg.mixer.music.unpause()
                 music_enabled = not music_enabled
 
             if event.type == pg.KEYDOWN:
@@ -395,12 +413,6 @@ def check_events():
 
     return True
 
-def render_game():
-    screen.blit(background, (0, 0))
-
-    _render_grid()
-    _render_player()
-
 # ============ MAIN SCREEN ============
 
 screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -412,8 +424,9 @@ pg.key.set_repeat(400, 40)
 
 running = True
 state = "starting_screen"
+pg.mixer.music.play(-1)
 while running:
-    running = check_events()
+    running = handle_events()
 
     match state:
         case "starting_screen":
@@ -426,5 +439,3 @@ while running:
 
     pg.display.flip()
     clock.tick(10)
-
-# ============ CLEANUP ============

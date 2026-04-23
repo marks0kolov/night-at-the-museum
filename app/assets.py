@@ -50,6 +50,19 @@ generic_button = _load_image(IMAGES_PATH / "button.generic.png", TOGGLE_BUTTON_S
 icon_sfx = _load_image(IMAGES_PATH / "icon.sfx.png")
 icon_music = _load_image(IMAGES_PATH / "icon.music.png")
 icon_off = _load_image(IMAGES_PATH / "icon.off.png")
+arrow_default = _load_image(IMAGES_PATH / "arrow.default.png")
+arrow_dimmed = _load_image(IMAGES_PATH / "arrow.dimmed.png")
+gem_images = [
+    _load_image(IMAGES_PATH / "gems.1.png"),
+    _load_image(IMAGES_PATH / "gems.2.png"),
+    _load_image(IMAGES_PATH / "gems.3.png"),
+]
+artifact_images = [
+    _load_image(IMAGES_PATH / "artifact.1.png"),
+    _load_image(IMAGES_PATH / "artifact.2.png"),
+    _load_image(IMAGES_PATH / "artifact.3.png"),
+    _load_image(IMAGES_PATH / "artifact.4.png"),
+]
 
 difficuly_easy_button = {
     "selected": _load_image(IMAGES_PATH / "button.level.easy.selected.png", DIFFICULY_BUTTON_SIZE),
@@ -68,6 +81,7 @@ background = _load_image(IMAGES_PATH / "background.png", (WIDTH, HEIGHT))
 room_default = _load_image(IMAGES_PATH / "room.default.png")
 room_darkened = _load_image(IMAGES_PATH / "room.darkened.png")
 icon_final_mark = _load_image(IMAGES_PATH / "icon.final_mark.png")
+guard_image = _load_image(IMAGES_PATH / "sprite.guard.png")
 
 player_images = dict(
     zip(

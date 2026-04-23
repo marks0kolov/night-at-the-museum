@@ -2,7 +2,7 @@ import pygame as pg
 from app.assets import *
 from app.config import *
 from app.screens.settings import handle_events as handle_settings_events, render as render_settings
-from app.screens.game import handle_events as handle_game_events, render as render_game
+from app.screens.game import handle_events as handle_game_events, render as render_game, reset_game
 from app.screens.starting import handle_events as handle_starting_events, render as render_starting
 
 # ============ INIT ============
@@ -35,9 +35,9 @@ def handle_events():
             return False
 
         if state == "starting_screen":
-            new_state = handle_starting_events(event)
-            if new_state:
-                state = new_state
+            state = handle_starting_events(event)
+            if state == "game":
+                reset_game(selected_difficuly)
 
         elif state == "settings":
             state, selected_difficuly, settings_name, sfx_enabled, music_enabled = handle_settings_events(
@@ -49,9 +49,7 @@ def handle_events():
             )
 
         elif state == "game":
-            new_state = handle_game_events(event, selected_difficuly)
-            if new_state:
-                state = new_state
+            state = handle_game_events(event, selected_difficuly)
 
     return True
 

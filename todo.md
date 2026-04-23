@@ -1,4 +1,8 @@
-- add the option to install via curl script instead of building from source
-- add a shadown on hover for all buttons
-- make it dynamically take screen size
-- 
+# Todo
+
+- Create a README
+- Add a menu bar to the top of the game with
+  - Score
+  - Title
+  - 
+- Add a game over screen and a comparison to max score screen

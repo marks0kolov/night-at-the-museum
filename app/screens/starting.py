@@ -62,6 +62,6 @@ def handle_events(event: pg.event.Event):
     if button_pressed(event, settings_layout["settings_button_rect"]):
         return "settings"
 
-    return None
+    return "starting_screen"
 
 __all__ = ["render", "handle_events"]

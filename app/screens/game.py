@@ -1,4 +1,5 @@
 import pygame as pg
+import random
 
 from app.assets import *
 from app.config import *
@@ -17,6 +18,8 @@ class Player:
 player = Player()
 museum = None
 turn = 0
+gem_image_by_room = {}
+artifact_image_by_room = {}
 
 ARROW_ROTATIONS = {
     (1, 0): 0,
@@ -33,7 +36,7 @@ ARROW_ROTATIONS = {
 
 def reset_game(selected_difficuly):
     """reset the player and generate a fresh museum"""
-    global museum, turn
+    global museum, turn, gem_image_by_room, artifact_image_by_room
 
     player.pos_x = 0
     player.pos_y = 0
@@ -41,6 +44,8 @@ def reset_game(selected_difficuly):
     player.visited_rooms = {(0, 0)}
     turn = 0
     museum = generate_museum(selected_difficuly)
+    gem_image_by_room = {room_pos: random.choice(gem_images) for room_pos in museum["gems"]}
+    artifact_image_by_room = {room_pos: random.choice(artifact_images) for room_pos in museum["artifacts"]}
 
 # ============ LAYOUT ============
 
@@ -105,8 +110,8 @@ def _render_collectibles(screen, selected_difficuly):
     item_size = max(1, int(grid_layout["room_size"] * 0.45))
 
     # render gems
-    for index, room_pos in enumerate(sorted(museum["gems"])):
-        image = pg.transform.scale(gem_images[index % len(gem_images)], (item_size, item_size))
+    for room_pos in sorted(museum["gems"]):
+        image = pg.transform.scale(gem_image_by_room[room_pos], (item_size, item_size))
 
         x = grid_layout["grid_left"] + room_pos[0] * (grid_layout["room_size"] + PADDING_SMALL)
         y = grid_layout["grid_top"] + room_pos[1] * (grid_layout["room_size"] + PADDING_SMALL)
@@ -116,8 +121,8 @@ def _render_collectibles(screen, selected_difficuly):
         screen.blit(image, rect)
 
     # render artifacts
-    for index, room_pos in enumerate(sorted(museum["artifacts"])):
-        image = pg.transform.scale(artifact_images[index % len(artifact_images)], (item_size, item_size))
+    for room_pos in sorted(museum["artifacts"]):
+        image = pg.transform.scale(artifact_image_by_room[room_pos], (item_size * 1.3, item_size * 1.3))
 
         x = grid_layout["grid_left"] + room_pos[0] * (grid_layout["room_size"] + PADDING_SMALL)
         y = grid_layout["grid_top"] + room_pos[1] * (grid_layout["room_size"] + PADDING_SMALL)
@@ -189,6 +194,8 @@ def _render_guards(screen, selected_difficuly):
                 dx = outgoing_dx
                 dy = outgoing_dy
 
+            dx = 0 if dx == 0 else (1 if dx > 0 else -1)
+            dy = 0 if dy == 0 else (1 if dy > 0 else -1)
             angle = _get_rotation(dx, dy, 0)
             rotated_guard = pg.transform.rotate(guard_surface, angle)
 

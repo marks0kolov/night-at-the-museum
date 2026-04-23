@@ -1,5 +1,5 @@
 import pygame as pg
-from config import WIDTH, HEIGHT, IMAGES_PATH, FONTS_PATH, MUSIC_PATH
+from app.config import WIDTH, HEIGHT, IMAGES_PATH, FONTS_PATH, MUSIC_PATH
 
 # ============ COLORS ============
 WHITE = (255, 255, 255)
@@ -65,7 +65,9 @@ difficuly_hard_button = {
 }
 
 background = _load_image(IMAGES_PATH / "background.png", (WIDTH, HEIGHT))
-room = _load_image(IMAGES_PATH / "room.png")
+room_default = _load_image(IMAGES_PATH / "room.default.png")
+room_darkened = _load_image(IMAGES_PATH / "room.darkened.png")
+icon_final_mark = _load_image(IMAGES_PATH / "icon.final_mark.png")
 
 player_images = dict(
     zip(

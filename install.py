@@ -70,7 +70,7 @@ def clone_repo():
         i += 1
 
     print(f"Cloning repo into '{repo_dir}'...")
-    _run(["git", "clone", "https://github.com/marks0kolov/night-at-the-museum.git", repo_dir])
+    _run(["git", "clone", "--quiet", "https://github.com/marks0kolov/night-at-the-museum.git", repo_dir])
 
     return repo_dir
 

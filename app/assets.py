@@ -1,30 +1,62 @@
 import pygame as pg
-from config import WIDTH, HEIGHT, IMAGES_PATH, FONTS_PATH, ROOM_SIZE, PADDING_BIG
+from config import WIDTH, HEIGHT, IMAGES_PATH, FONTS_PATH
+
+# ============ COLORS ============
+WHITE = (255, 255, 255)
+BROWN = (42, 29, 18)
 
 # ============ IMAGES ============
 # ~~~~~~ HELPERS ~~~~~~
+
 def _load_image(path, size=None):
     try:
         img = pg.image.load(path)
-    except Exception as e:
+    except Exception:
         print(f"Error: image not found at path {path}")
-        return None
+        exit()
     
     if size:
         img = pg.transform.scale(img, size)
     return img
-
 # ~~~~~~ SIZES ~~~~~~
-START_BUTTON_WIDTH = int(WIDTH * 0.4)
-START_BUTTON_HEIGHT = int(START_BUTTON_WIDTH / 3)
-SETTINGS_BUTTON_SIZE = START_BUTTON_HEIGHT
+START_BUTTON_SIZE = (450, 150)
+SETTINGS_BUTTON_SIZE = START_BUTTON_SIZE[1]
+SETTINGS_WINDOW_SIZE = (960, 680)
+DIFFICULY_BUTTON_SIZE = (320, 116)
+TOGGLE_BUTTON_SIZE = (176, 176)
 
 # ~~~~~~ IMAGES ~~~~~~
-start_button = _load_image(IMAGES_PATH / "button.start.png", (START_BUTTON_WIDTH, START_BUTTON_HEIGHT))
-settings_button = _load_image(IMAGES_PATH / "button.settings.png", (SETTINGS_BUTTON_SIZE, SETTINGS_BUTTON_SIZE))
+start_button = _load_image(IMAGES_PATH / "button.start.png", START_BUTTON_SIZE)
+icon_settings = _load_image(IMAGES_PATH / "icon.settings.png")
+
+settings_window = _load_image(IMAGES_PATH / "settings_window.png", SETTINGS_WINDOW_SIZE)
+
+name_input_field = _load_image(IMAGES_PATH / "name_input_field.png")
+submit_name_button = _load_image(IMAGES_PATH / "button.submit_name.png")
+
+close_button = _load_image(IMAGES_PATH / "button.close.png", (80, 80))
+
+generic_button = _load_image(IMAGES_PATH / "button.generic.png", TOGGLE_BUTTON_SIZE)
+
+icon_sfx = _load_image(IMAGES_PATH / "icon.sfx.png")
+icon_music = _load_image(IMAGES_PATH / "icon.music.png")
+icon_off = _load_image(IMAGES_PATH / "icon.off.png")
+
+difficuly_easy_button = {
+    "selected": _load_image(IMAGES_PATH / "button.level.easy.selected.png", DIFFICULY_BUTTON_SIZE),
+    "unselected": _load_image(IMAGES_PATH / "button.level.easy.unselected.png", DIFFICULY_BUTTON_SIZE)
+}
+difficuly_medium_button = {
+    "selected": _load_image(IMAGES_PATH / "button.level.medium.selected.png", DIFFICULY_BUTTON_SIZE),
+    "unselected": _load_image(IMAGES_PATH / "button.level.medium.unselected.png", DIFFICULY_BUTTON_SIZE)
+}
+difficuly_hard_button = {
+    "selected": _load_image(IMAGES_PATH / "button.level.hard.selected.png", DIFFICULY_BUTTON_SIZE),
+    "unselected": _load_image(IMAGES_PATH / "button.level.hard.unselected.png", DIFFICULY_BUTTON_SIZE)
+}
 
 background = _load_image(IMAGES_PATH / "background.png", (WIDTH, HEIGHT))
-room = _load_image(IMAGES_PATH / "room.png", (ROOM_SIZE, ROOM_SIZE))
+room = _load_image(IMAGES_PATH / "room.png")
 
 player_images = dict(
     zip(
@@ -40,9 +72,9 @@ player_images = dict(
     )
 )
 
-for k in player_images:
-    player_images[k] = pg.transform.scale(player_images[k], (ROOM_SIZE - PADDING_BIG, ROOM_SIZE - PADDING_BIG))
-
 # ============ FONTS ============
-BODY = pg.font.Font(FONTS_PATH / "NotoSerifGeorgian.ttf", max(16, WIDTH // 90))
-HEADING = pg.font.Font(FONTS_PATH / "UnifrakturMaguntia.ttf", max(64, WIDTH // 10))
+TITLE = pg.font.Font(FONTS_PATH / "UnifrakturMaguntia.ttf", 118)
+HEADING = pg.font.Font(FONTS_PATH / "UnifrakturMaguntia.ttf", 72)
+
+SUBTITLE = pg.font.Font(FONTS_PATH / "NotoSerifGeorgian.ttf", 55)
+BODY = pg.font.Font(FONTS_PATH / "NotoSerifGeorgian.ttf", 25)

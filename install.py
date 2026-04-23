@@ -17,7 +17,7 @@ OS = platform.system()
 
 def _run(cmd, check=True):
     try:
-        subprocess.run(cmd, check=check)
+        subprocess.run(cmd, check=check, stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         if check:
             sys.exit(1)
@@ -110,9 +110,9 @@ def install_requirements():
 def print_run_command():
     print("Setup complete")
     if OS == "Windows": # special microslop version
-        print("You can now run the game with .venv\\Scripts\\activate && python -m app.main")
+        print(f"cd {repo_dir} && .venv\\Scripts\\python.exe -m app.main")
     else:
-        print("You can now run the game with .venv/bin/python -m app.main")
+        print(f"cd {repo_dir} && .venv/bin/python -m app.main")
 
 # ============ run ============
 ensure_git()

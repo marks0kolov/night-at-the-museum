@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-
-# AI was used a little when writing this code, as I don't know that much about the Microslop OS
-# All code for mac and linux was made by me with ❤️
-
 import os
 import sys
 import shutil
@@ -14,7 +10,6 @@ print("Starting setup...")
 OS = platform.system()
 
 # ============ helpers ============
-
 def _run(cmd, check=True):
     try:
         subprocess.run(cmd, check=check, stdout=subprocess.DEVNULL)
@@ -99,12 +94,12 @@ def setup_venv():
 def install_requirements():
     print("Installing required packages...")
     if OS == "Windows": # special microslop version
-        pip_path = os.path.join(".venv", "Scripts", "pip.exe")
+        VENV_PYTHON = os.path.join(".venv", "Scripts", "python.exe")
     else:
-        pip_path = os.path.join(".venv", "bin", "pip")
+        VENV_PYTHON = os.path.join(".venv", "bin", "python")
 
-    _run([pip_path, "install", "--upgrade", "pip"])
-    _run([pip_path, "install", "-r", "requirements.txt"])
+    _run([VENV_PYTHON, "-m", "pip", "install", "--upgrade", "pip"])
+    _run([VENV_PYTHON, "-m", "pip", "install", "-r", "requirements.txt"])
 
 # ============ provide run command ============
 def print_run_command():

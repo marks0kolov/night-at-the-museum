@@ -26,15 +26,14 @@ def _get_starting_screen_layout():
 
     # settings icon rect
     settings_icon_size = int(settings_rect.width * 0.7)
-    settings_icon = pg.transform.scale(icon_settings, (settings_icon_size, settings_icon_size))
-    settings_icon_rect = settings_icon.get_rect(center=settings_rect.center)
+    settings_icon_rect = pg.Rect(0, 0, settings_icon_size, settings_icon_size)
+    settings_icon_rect.center = settings_rect.center
     
     return {
         "start_button_rect": start_rect,
         "settings_button_rect": settings_rect,
         "title_text": title_text,
         "start_text": start_text,
-        "settings_icon": settings_icon,
         "settings_icon_rect": settings_icon_rect,
         "title_rect": title_rect,
         "start_text_rect": start_text_rect,
@@ -50,7 +49,7 @@ def render(screen):
     screen.blit(start_button, layout["start_button_rect"])
     screen.blit(pg.transform.scale(generic_button, layout["settings_button_rect"].size), layout["settings_button_rect"])
     screen.blit(layout["start_text"], layout["start_text_rect"])
-    screen.blit(layout["settings_icon"], layout["settings_icon_rect"])
+    screen.blit(pg.transform.scale(icon_settings, layout["settings_icon_rect"].size), layout["settings_icon_rect"])
 
 # ============ EVENT HANDLING ============
 def handle_events(event: pg.event.Event):        

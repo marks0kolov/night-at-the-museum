@@ -6,12 +6,12 @@ from app.config import *
 from app.helpers import button_pressed
 
 # ============ SETTINGS VALUES ============
-DIFFICULY_BUTTONS = {
-    "easy": difficuly_easy_button,
-    "medium": difficuly_medium_button,
-    "hard": difficuly_hard_button,
+DIFFICULTY_BUTTONS = {
+    "easy": difficulty_easy_button,
+    "medium": difficulty_medium_button,
+    "hard": difficulty_hard_button,
 }
-SETTINGS_SUBHEADINGS = ("Difficuly", "Name", "Audio")
+SETTINGS_SUBHEADINGS = ("Difficulty", "Name", "Audio")
 
 # ============ INPUT FIELD LOGIC ============
 class SettingsCursor:
@@ -29,9 +29,16 @@ class SettingsCursor:
         self.scroll_px = max(0, self.scroll_px)
 
 settings_cursor = SettingsCursor()
+name_field_active = False
+name_submitted = False
+submit_selected_until = 0
+
+SUBMIT_FLASH_MS = 300
 
 def _handle_settings_name_keydown(event: pg.event.Event, field_rect: pg.Rect, settings_name, settings_cursor):
     """handle a key being pressed if the name is currently being typed in"""
+    old_name = settings_name
+
     if event.key == pg.K_BACKSPACE:
         if settings_cursor.col > 0:
             settings_name = settings_name[:settings_cursor.col - 1] + settings_name[settings_cursor.col:]
@@ -49,18 +56,30 @@ def _handle_settings_name_keydown(event: pg.event.Event, field_rect: pg.Rect, se
         pass
 
     settings_cursor.update_scroll(field_rect, settings_name)
-    return settings_name
+    return settings_name, settings_name != old_name
+
+def _move_cursor_to_end(field_rect: pg.Rect, settings_name):
+    """put the text cursor at the end of the name field"""
+    settings_cursor.col = len(settings_name)
+    settings_cursor.update_scroll(field_rect, settings_name)
+
+def _get_submit_button_image():
+    """return the current submit button image"""
+    if name_submitted:
+        if pg.time.get_ticks() < submit_selected_until:
+            return submit_name_buttons["selected"]
+        return submit_name_buttons["dimmed"]
+
+    return submit_name_buttons["default"]
 
 # ============ LAYOUT ============
 def _get_settings_layout():
     """calculate and return all the rectangles and rendered text needed to draw the settings screen"""
-    #! some ai was used when writing this function, however, all the comments were written by me and i reviewed every single line. 
-    #! just come on, there's no way i'd be wasting my time on this.
     window_rect = settings_window.get_rect(center=(WIDTH // 2, HEIGHT // 2)) # create the settings window in the center
     close_rect = close_button.get_rect(center=(window_rect.left + 10, window_rect.top + 10)) # create close button
     
     # create title text and rect
-    title_y = window_rect.top + SETTINGS_TITLE_Y_OFFSET
+    title_y = window_rect.top + 66
     title_text = HEADING.render("Settings", True, BROWN)
     title_rect = title_text.get_rect(midtop=(window_rect.centerx, title_y))
 
@@ -92,14 +111,14 @@ def _get_settings_layout():
     section_title_gap = SETTINGS_SECTION_TITLE_GAP
     # position for each title
     section_lefts = {
-        "Difficuly": left_rect.left + SETTINGS_TEXT_OFFSET_X,
+        "Difficulty": left_rect.left + SETTINGS_TEXT_OFFSET_X,
         "Name": name_section_rect.left + SETTINGS_TEXT_OFFSET_X - 16,
         "Audio": audio_section_rect.left + SETTINGS_TEXT_OFFSET_X,
     }
     section_tops = {
-        "Difficuly": left_rect.top - PADDING_SMALL,
+        "Difficulty": left_rect.top - PADDING_SMALL,
         "Name": name_section_rect.top - PADDING_SMALL,
-        "Audio": audio_section_rect.top - PADDING_SMALL // 2 + 17,
+        "Audio": audio_section_rect.top - PADDING_SMALL // 2,
     }
 
     # render subheading text and rect for each section
@@ -112,24 +131,24 @@ def _get_settings_layout():
             "rect": rect,
         }
 
-    # outline difficuly buttons boundaries
-    difficuly_buttons_top = subheadings["difficuly"]["rect"].bottom + section_title_gap
-    difficuly_buttons_bottom = left_rect.bottom - PADDING_SMALL
-    difficuly_buttons_height = difficuly_buttons_bottom - difficuly_buttons_top
-    difficuly_gap = SETTINGS_DIFFICULY_GAP
-    difficuly_button_height = max(1, (difficuly_buttons_height - difficuly_gap * 2) // 3)
+    # outline difficulty buttons boundaries
+    difficulty_buttons_top = subheadings["difficulty"]["rect"].bottom + section_title_gap
+    difficulty_buttons_bottom = left_rect.bottom - PADDING_SMALL
+    difficulty_buttons_height = difficulty_buttons_bottom - difficulty_buttons_top
+    difficulty_gap = SETTINGS_DIFFICULTY_GAP
+    difficulty_button_height = max(1, (difficulty_buttons_height - difficulty_gap * 2) // 3)
 
-    # create each difficuly button's rect
-    difficuly_rects = {}
-    current_top = difficuly_buttons_top
-    for difficuly in DIFFICULY_BUTTONS:
+    # create each difficulty button's rect
+    difficulty_rects = {}
+    current_top = difficulty_buttons_top
+    for difficulty in DIFFICULTY_BUTTONS:
         # fill any leftovers by stretching the last button
-        if difficuly == "hard":
-            button_height = difficuly_buttons_bottom - current_top
+        if difficulty == "hard":
+            button_height = difficulty_buttons_bottom - current_top
         else:
-            button_height = difficuly_button_height
-        difficuly_rects[difficuly] = pg.Rect(left_rect.left, current_top, left_rect.width, button_height)
-        current_top += button_height + difficuly_gap
+            button_height = difficulty_button_height
+        difficulty_rects[difficulty] = pg.Rect(left_rect.left, current_top, left_rect.width, button_height)
+        current_top += button_height + difficulty_gap
 
     # create text field
     field_rect = pg.Rect(
@@ -141,9 +160,9 @@ def _get_settings_layout():
     # create submit button
     submit_rect = pg.Rect(
         name_section_rect.left,
-        field_rect.bottom + PADDING_SMALL - 10,
+        field_rect.bottom + PADDING_SMALL - 15,
         name_section_rect.width,
-        96,
+        80,
     )
 
     # outline audio buttons borders
@@ -163,16 +182,13 @@ def _get_settings_layout():
         "close_rect": close_rect,
         "title_rect": title_rect,
         "title_text": title_text,
-        "difficuly_rects": difficuly_rects,
+        "difficulty_rects": difficulty_rects,
         "subheadings": subheadings,
-        "buttons": {
-            "sound": sound_rect,
-            "music": music_rect,
-        },
+        "sound_button_rect": sound_rect,
+        "music_button_rect": music_rect,
         "name_field_rect": field_rect,
         "submit_rect": submit_rect,
     }
-    # phew
 
 # ============ RENDERING ============
 def _render_settings_text_field(screen, field_rect: pg.Rect, settings_name, settings_cursor):
@@ -187,7 +203,7 @@ def _render_settings_text_field(screen, field_rect: pg.Rect, settings_name, sett
     text_x = field_rect.x + PADDING_SMALL - settings_cursor.scroll_px
     screen.blit(rendered_text, (text_x, field_rect.y + (field_rect.height - rendered_text.get_height()) // 2))
 
-    if (pg.time.get_ticks() // 500) % 2 == 0:
+    if name_field_active and (pg.time.get_ticks() // 500) % 2 == 0:
         cursor_x = field_rect.x + PADDING_SMALL + BODY.size(settings_name[:settings_cursor.col])[0] - settings_cursor.scroll_px
         cursor_h = BODY.get_height()
         cursor_y = field_rect.y + (field_rect.height - cursor_h) // 2
@@ -210,7 +226,7 @@ def _render_audio_button(screen, rect: pg.Rect, icon: pg.Surface, enabled: bool)
         off_rect = off_surface.get_rect(center=rect.center)
         screen.blit(off_surface, off_rect)
 
-def render(screen, selected_difficuly, settings_name, sound_fx_enabled, music_enabled):
+def render(screen, selected_difficulty, settings_name, sound_fx_enabled, music_enabled):
     """get the layout from _get_settings_layout and render the settings menu using it"""
     layout = _get_settings_layout()
 
@@ -221,47 +237,66 @@ def render(screen, selected_difficuly, settings_name, sound_fx_enabled, music_en
     for subheading in layout["subheadings"].values():
         screen.blit(subheading["surface"], subheading["rect"])
 
-    for difficuly, rect in layout["difficuly_rects"].items():
-        button_image = DIFFICULY_BUTTONS[difficuly]["selected" if selected_difficuly == difficuly else "unselected"]
+    for difficulty, rect in layout["difficulty_rects"].items():
+        button_image = DIFFICULTY_BUTTONS[difficulty]["selected" if selected_difficulty == difficulty else "unselected"]
         screen.blit(pg.transform.scale(button_image, rect.size), rect)
 
-        difficuly_text = SUBTITLE.render(difficuly.upper(), True, WHITE)
-        text_rect = difficuly_text.get_rect(center=rect.center)
-        screen.blit(difficuly_text, text_rect)
+        difficulty_text = SUBTITLE.render(difficulty.upper(), True, WHITE)
+        text_rect = difficulty_text.get_rect(center=rect.center)
+        screen.blit(difficulty_text, text_rect)
 
     _render_settings_text_field(screen, layout["name_field_rect"], settings_name, settings_cursor)
-    screen.blit(pg.transform.scale(submit_name_button, layout["submit_rect"].size), layout["submit_rect"])
-    _render_audio_button(screen, layout["buttons"]["sound"], icon_sfx, sound_fx_enabled)
-    _render_audio_button(screen, layout["buttons"]["music"], icon_music, music_enabled)
+    screen.blit(pg.transform.scale(_get_submit_button_image(), layout["submit_rect"].size), layout["submit_rect"])
+    _render_audio_button(screen, layout["sound_button_rect"], icon_sfx, sound_fx_enabled)
+    _render_audio_button(screen, layout["music_button_rect"], icon_music, music_enabled)
 
 # ============ HANDLE EVENTS ============
-def handle_events(event: pg.event.Event, selected_difficuly, settings_name, sound_fx_enabled, music_enabled):
+def handle_events(event: pg.event.Event, selected_difficulty, settings_name, sound_fx_enabled, music_enabled):
+    global name_field_active, name_submitted, submit_selected_until
+
     state = "settings"
     layout = _get_settings_layout()
 
     if button_pressed(event, layout["close_rect"]):
         state = "starting_screen"
+        name_field_active = False
+    
+    if button_pressed(event, layout["name_field_rect"]):
+        name_field_active = True
+        settings_cursor.col = len(settings_name)
+        settings_cursor.update_scroll(layout["name_field_rect"], settings_name)
+    elif button_pressed(event, layout["submit_rect"]):
+        name_field_active = False
 
-    for difficuly, rect in layout["difficuly_rects"].items():
+    for difficulty, rect in layout["difficulty_rects"].items():
         if button_pressed(event, rect):
-            selected_difficuly = difficuly
+            selected_difficulty = difficulty
 
-    if button_pressed(event, layout["buttons"]["sound"]):
+    if button_pressed(event, layout["sound_button_rect"]):
         sound_fx_enabled = not sound_fx_enabled
 
-    if button_pressed(event, layout["buttons"]["music"]):
+    if button_pressed(event, layout["music_button_rect"]):
         if music_enabled:
             pg.mixer.music.pause()
         else:
             pg.mixer.music.unpause()
         music_enabled = not music_enabled
 
+    if button_pressed(event, layout["submit_rect"]) and not name_submitted:
+        name_submitted = True
+        submit_selected_until = pg.time.get_ticks() + SUBMIT_FLASH_MS
+
     if event.type == pg.KEYDOWN:
         if event.key == pg.K_ESCAPE:
             state = "starting_screen"
+            name_field_active = False
+        elif name_field_active:
+            settings_name, name_changed = _handle_settings_name_keydown(event, layout["name_field_rect"], settings_name, settings_cursor)
+            if name_changed:
+                name_submitted = False
         else:
-            settings_name = _handle_settings_name_keydown(event, layout["name_field_rect"], settings_name, settings_cursor)
+            pass
 
-    return state, selected_difficuly, settings_name, sound_fx_enabled, music_enabled
+    return state, selected_difficulty, settings_name, sound_fx_enabled, music_enabled
 
 __all__ = ["render", "handle_events"]

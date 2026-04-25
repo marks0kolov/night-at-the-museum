@@ -1,9 +1,3 @@
-"""
-I literally wasted a few hours writing it.
-I hate this code. 
-I hate my life (ok, that's totally not true, but you get it).
-"""
-
 import random
 
 from app.config import GRID_SIZES
@@ -18,19 +12,19 @@ DIFFICULTY_RULES = {
     "medium": {
         "gems": 4,
         "artifacts": 2,
-        "guards": 3,
+        "guards": 4,
         "cycle_size": 4,
     },
     "hard": {
-        "gems": 9,
+        "gems": 10,
         "artifacts": 4,
-        "guards": 4,
-        "cycle_size": 6,
+        "guards": 5,
+        "cycle_size": 8,
     },
 }
 
 GEM_SCORE = 1
-ARTIFACT_SCORE = 5
+ARTIFACT_SCORE = 3
 
 # ============ CREATE MUSEUM ============
 
@@ -120,7 +114,6 @@ def generate_museum(difficulty):
     for _ in range(rules["guards"]):
         cycle = _find_guard_cycle(available_rooms, safe_path, rules["cycle_size"])
         guards.append(cycle)
-        available_rooms = [room for room in available_rooms if room not in cycle]
 
     # place gems
     gems = set(random.sample(available_rooms, rules["gems"]))

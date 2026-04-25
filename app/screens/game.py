@@ -194,6 +194,7 @@ def _render_guards(screen, grid_layout):
     """render guards at their current positions in the cycle"""
     guard_size = max(1, int(grid_layout["room_size"] * 0.6))
     guard_surface = pg.transform.scale(guard_image, (guard_size, guard_size))
+    collectible_rooms = museum["gems"] | museum["artifacts"]
 
     for cycle in museum["guards"]:
         if not cycle:
@@ -207,6 +208,10 @@ def _render_guards(screen, grid_layout):
         dy = next_room[1] - room_pos[1]
         angle = _get_guard_rotation(dx, dy)
         rotated_guard = pg.transform.rotate(guard_surface, angle)
+
+        if room_pos in collectible_rooms:
+            rotated_guard = rotated_guard.copy()
+            rotated_guard.set_alpha(150)
 
         guard_rect = rotated_guard.get_rect(center=_get_room_center(grid_layout, room_pos))
         screen.blit(rotated_guard, guard_rect)
